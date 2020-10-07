@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Investors' Exchange</title>
+    <link href="https://vjs.zencdn.net/7.8.4/video-js.css" rel="stylesheet" />
+    <style>
+        html, body, #map {
+            background: rgba(244,11,181,1);
+            margin: 0;
+            height: 100%;
+            width: 100%;
+            font-family: sans-serif;
+        }
+        #eHemi {
+          display: inline-block;
+          z-index:0;
+          position: absolute;
+          z-index: 5;
+          bottom: 0;
+          right: 0;
+        }
+        #wHemi {
+          display: inline-block;
+          position: fixed;
+          z-index: 5;
+          bottom: 0;
+          left: 0;
+        }
+        #vid-div {
+          position:absolute;
+          top:0;
+        }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <div id="eHemi"></div>
+    <div id="wHemi"></div>
+    <div id="vid-div">
+      <video autoplay loop
+        id="ix-video"
+        class="video-js"
+        preload="auto"
+        width="270"
+        height="430"
+        data-setup="{}"
+      >
+        <source src="http://127.0.0.1:3000/video/bw/2103.mp4" type="video/mp4" />
+        <p class="vjs-no-js">
+          To view this video please enable JavaScript, and consider upgrading to a
+          web browser that
+          <a href="https://videojs.com/html5-video-support/" target="_blank"
+            >supports HTML5 video</a
+          >
+        </p>
+      </video>
+    </div>
+    <script src="./map.js"></script>
+    <script src="./hemis.js"></script>
+    <script src="https://vjs.zencdn.net/7.8.4/video.js"></script>
+  </body>
+</html>
