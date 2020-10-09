@@ -12,30 +12,34 @@ import VectorLayer from 'ol/layer/Vector';
 import Fill from 'ol/style/Fill';
 import Stroke from 'ol/style/Stroke';
 import Style from 'ol/style/Style';
+
+import * as color from "./colors.js";
+import * as world from "./hemis.js";
+
 const rotate = 15.816 + 90;
 const center = [-79.384353, 43.641923];
 const cutWidth = 0.3;
 const cutHeight = 0.25;
 const initZoom = 19;
-import * as color from "./colors.js";
+
 
 const highlightStyle = new Style({
     fill: new Fill({
-      color: color.highlightBG,
+        color: color.highlightBG,
     }),
     stroke: new Stroke({
-      color: color.highlight,
-      width: 2,
+        color: color.highlight,
+        width: 2,
     })
 });
 
 const boothStyle = new Style({
     fill: new Fill({
-      color: color.baseBG,
+        color: color.baseBG,
     }),
     stroke: new Stroke({
-      color: color.base,
-      width: 1,
+        color: color.base,
+        width: 1,
     })
 });
 
@@ -54,7 +58,7 @@ const osm = new TileLayer({
 const booths = new VectorLayer({
     className: 'booths',
     source: new VectorSource({
-        url:'http://127.0.0.1:3000/booths/',
+        url: 'http://127.0.0.1:3000/booths/',
         format: new GeoJSON(),
     }),
     style: boothStyle
@@ -71,7 +75,7 @@ const map = new Map({
         rotation: rotate * (Math.PI / 180),
         minZoom: 18,
         maxZoom: 21,
-        })
+    })
 });
 
 map.setView(new View({
@@ -96,11 +100,11 @@ function clip(event) {
     ctx.translate(ctx.canvas.width / 2, ctx.canvas.height / 2);
     ctx.rotate(-canvasRotation);
 
-    ctx.translate(-w/2, -h/2);
+    ctx.translate(-w / 2, -h / 2);
     ctx.beginPath();
     ctx.rect(0, 0, w, h)
     ctx.clip();
-    ctx.translate(w/2, h/2);
+    ctx.translate(w / 2, h / 2);
 
     // reapply canvas rotation and position
     ctx.rotate(canvasRotation);
@@ -131,29 +135,35 @@ let selected = null;
 let video = document.getElementsByTagName("video")[0];
 let videoSource = document.getElementsByTagName("source");
 
-map.on('pointermove', function(e) {
+map.on('pointermove', function (e) {
     if (hovered !== null) {
         hovered.setStyle(undefined);
         hovered = null;
+        world.boothReset();
     }
 
-    map.forEachFeatureAtPixel(e.pixel, function(f) {
+    map.forEachFeatureAtPixel(e.pixel, function (f) {
         hovered = f;
+        console.log(hovered.getProperties());
         f.setStyle(highlightStyle);
+        let boothNum = hovered.getProperties().booth_no;
+        let exName = hovered.getProperties().exhibitor;
+        let countries = hovered.getProperties().countries;
+        world.boothSelect(boothNum, exName, countries);
         return true;
     }, {
-        layerFilter: function(a) {
-            return(a == booths)
+        layerFilter: function (a) {
+            return (a == booths)
         }
     })
 })
 
-map.on('click', function(e) {
+map.on('click', function (e) {
     if (selected !== null) {
         selected.setStyle(undefined);
         selected = null;
     }
-    map.forEachFeatureAtPixel(e.pixel, function(f) {
+    map.forEachFeatureAtPixel(e.pixel, function (f) {
         selected = f;
         let boothNum = selected.getProperties().booth_no;
         let url = 'http://127.0.0.1:3000/video/bw/';
@@ -162,8 +172,8 @@ map.on('click', function(e) {
         video.play();
         return true;
     }, {
-        layerFilter: function(a) {
-            return(a == booths)
+        layerFilter: function (a) {
+            return (a == booths)
         }
     })
 

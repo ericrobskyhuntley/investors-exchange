@@ -1,8 +1,7 @@
 import * as d3 from "d3";
-import { svg } from "d3";
 import { geoNicolosi } from "d3-geo-projection";
 import { geoAirocean } from "d3-geo-polygon";
-import { none } from "ol/centerconstraint";
+const slug = require("slug");
 import * as color from "./colors.js";
 
 const pad = 30;
@@ -15,7 +14,80 @@ console.log(w, h);
 const graticule = d3.geoGraticule10();
 const sphere = ({ type: "Sphere" });
 
-const drawHemi = (c, ex, hemi) => {
+let mouseOver = function(d) {
+    d3.selectAll(".country")
+        .transition()
+        .duration(50)
+        .style("opacity", 0.5);
+    d3.select(this)
+        .transition()
+        .duration(50)
+        .style("opacity", 1);
+}
+
+let mouseLeave = function(d) {
+    d3.selectAll(".country")
+        .transition()
+        .duration(50)
+        .style("opacity", 1);
+}
+
+let boothSelect = function(boothNum, exName, countries) {
+    let nameSlug = slug(exName);
+    let countriesAgg = countries.map(i => '#' + slug(String(i))).join(', ');
+    d3.selectAll(".booth-hq")
+        .transition()
+        .duration(50)
+        .style("opacity", 0);
+    d3.selectAll("#booth-hq-" + boothNum)
+        .transition()
+        .duration(50)
+        .attr("stroke-width", 1)
+        .style("opacity", 1);
+    d3.selectAll(".exhibitor")
+        .transition()
+        .duration(50)
+        .style("opacity", 0);
+    d3.selectAll("#"+nameSlug)
+        .transition()
+        .duration(50)
+        .style("opacity", 1);
+    d3.selectAll("#hq-c-"+boothNum)
+        .transition()
+        .duration(50)
+        .attr("stroke-width", 1)
+        .style("opacity", 1);
+    d3.selectAll(".country")
+        .transition()
+        .duration(50)
+        .style("opacity", 0.5);
+    d3.selectAll(countriesAgg)
+        .transition()
+        .duration(50)
+        .style("opacity", 1);
+}
+
+let boothReset = function() {
+    d3.selectAll(".booth-hq")
+        .transition()
+        .duration(50)
+        .style("opacity", 1)
+        .attr("stroke-width", 0.5);
+    d3.selectAll(".exhibitor")
+        .transition()
+        .duration(50)
+        .style("opacity", 1);
+    d3.selectAll(".hq-c")
+        .transition()
+        .duration(50)
+        .style("opacity", 0);
+    d3.selectAll(".country")
+        .transition()
+        .duration(50)
+        .style("opacity", 1);
+}
+
+const drawHemi = (c, ex, exc, hqC, hemi) => {
     let rotate = [];
     let proj = null;
     let divID = null;
@@ -66,22 +138,91 @@ const drawHemi = (c, ex, hemi) => {
         proj.reflectX(false).rotate(r);
     }
     // Countries
-    svg.append("path")
-        // .data(c)
-        // .enter().append("path")
-        .attr("d", path(c))
-        .attr("fill", color.highlight);
+    svg.append("g")
+        .attr("id", "countries")
+        .selectAll("path")
+        .data(c.features)
+        .enter()
+        .append("path")
+            .attr("d", path)
+            .attr("id", function(d){
+                return slug(d.properties.country);
+            })
+            .attr("class", function(d){
+                return "country";
+            })
+            .attr("fill", color.highlight)
+            .attr("stroke", "none")
+            .attr("stroke-width", 0)
+            .on("mouseover", mouseOver)
+            .on("mouseleave", mouseLeave);
+
     // Graticule
     svg.append("path")
         .attr("d", path(graticule))
         .attr("stroke-width", 0.25)
-        .attr("stroke", color.base)
+        .attr("stroke", color.highlight)
         .attr("fill", "none");
+
+    // Booth-to-HQ
+    svg.append("g")
+        .attr("id", function(d){
+            return "booth-to-hq"
+        })
+        .selectAll("path")
+        .data(exc.features)
+        .enter()
+        .append("path")
+            .attr("d", path)
+            .attr("class", function(d){
+                return "booth-hq";
+            })
+            .attr("id", function(d){
+                return "booth-hq-" + d.properties.booth_no;
+            })
+            .attr("fill", "none")
+            .attr("stroke", color.base)
+            .attr("stroke-width", 0.1);
+
+    // HQ-to-Country
+    svg.append("g")
+        .attr("id", "hq-to-countries")
+        .selectAll("path")
+        .data(hqC.features)
+        .enter()
+        .append("path")
+            .attr("d", path)
+            .attr("id", function(d){
+                return "hq-c-" + d.properties.booth_no;
+            })
+            .attr("class", function(d){
+                return "hq-c";
+            })
+            // .attr("fill", color.highlight)
+            .attr("fill", "none")
+            .attr("stroke", color.base)
+            .attr("stroke-width", 0.2)
+            .style("opacity", 0);
+    
     // Exhibitor locations
-    svg.append("path")
-        .attr("d", path(ex))
-        .attr("fill", color.base)
-        .attr("stroke", "none");
+    svg.append("g")
+        .attr("id", function(d){
+            return "exhibitors"
+        })
+        .selectAll("path")
+        .data(ex.features)
+        .enter()
+        .append("path")
+            .attr("d", path)
+            .attr("class", function(d){
+                return "exhibitor";
+            })
+            .attr("id", function(d){
+                return slug(d.properties.name);
+            })
+            .attr("fill", color.base)
+            .attr("stroke", "white")
+            .attr("stroke-width", 0.5);
     // Sphere
     svg.append("path")
         .attr("d", path(sphere))
@@ -92,22 +233,28 @@ const drawHemi = (c, ex, hemi) => {
 
 const d3Draw = () => {
     let endpoints = ['http://127.0.0.1:3000/countries/',
-        'http://127.0.0.1:3000/exhibitors/'];
+        'http://127.0.0.1:3000/exhibitors/',
+        'http://127.0.0.1:3000/exhibitorHQ/',
+        'http://127.0.0.1:3000/HQCountry/'];
     let promises = [];
-
     endpoints.forEach(function (url) {
         promises.push(d3.json(url));
     });
 
     Promise.all(promises).then(function (data) {
         let countries = data[0];
-        // country and country_long
-        // console.log(countries);
         let exhibitors = data[1];
+        let exhibitorHQ = data[2];
+        let hqCountry = data[3];
         // drawHemi(countries, exhibitors, "e");
         // drawHemi(countries, exhibitors, "w");
-        drawHemi(countries, exhibitors, "b")
+        drawHemi(countries, exhibitors, exhibitorHQ, hqCountry, "b")
     });
 }
 
 d3Draw();
+
+module.exports = {
+    boothSelect,
+    boothReset
+}
