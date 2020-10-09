@@ -14,7 +14,7 @@
         }
         #eHemi {
           display: inline-block;
-          z-index:0;
+          z-index:20;
           position: absolute;
           z-index: 5;
           bottom: 0;
@@ -23,9 +23,16 @@
         #wHemi {
           display: inline-block;
           position: fixed;
-          z-index: 5;
+          z-index: 20;
           bottom: 0;
           left: 0;
+        }
+        #fuller {
+          display: inline-block;
+          position: fixed;
+          z-index: 20;
+          bottom: 0;
+          right: 0;
         }
         #vid-div {
           position:absolute;
@@ -37,6 +44,7 @@
     <div id="map"></div>
     <div id="eHemi"></div>
     <div id="wHemi"></div>
+    <div id="fuller"></div>
     <div id="vid-div">
       <video autoplay loop
         id="ix-video"
