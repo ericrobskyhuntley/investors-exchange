@@ -41,7 +41,7 @@ const boothStyle = new Style({
 
 const base = new TileLayer({
     source: new XYZ({
-        url: 'http://127.0.0.1:3000/urb_tiles/{z}/{x}/{-y}.png',
+        url: 'http://127.0.0.1:3000/tiles/{z}/{x}/{-y}.png',
         layername: 'basemap'
     })
 });
@@ -67,10 +67,21 @@ const map = new Map({
     ],
     view: new View({
         center: fromLonLat(center),
-        zoom: initZoom,
-        rotation: rotate * (Math.PI / 180)
-    })
+        zoom: initZoom - 1,
+        rotation: rotate * (Math.PI / 180),
+        minZoom: 18,
+        maxZoom: 21,
+        })
 });
+
+map.setView(new View({
+    center: map.getView().getCenter(),
+    zoom: map.getView().getZoom() + 1,
+    rotation: map.getView().getRotation(),
+    minZoom: map.getView().getMinZoom(),
+    maxZoom: map.getView().getMaxZoom(),
+    extent: map.getView().calculateExtent(map.getSize())
+}))
 
 function clip(event) {
     let ctx = event.context;
