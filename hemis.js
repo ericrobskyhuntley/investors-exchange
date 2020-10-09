@@ -25,17 +25,68 @@ const eHemiProj = geoNicolosi()
     .fitExtent([[0, 0], [width - padding, height - padding]], sphere)
     .translate([width/2, height/2]);
 
-const ePath = d3.geoPath().projection(eHemiProj)
-const wPath = d3.geoPath().projection(wHemiProj)
+const ePath = d3.geoPath()
+    .projection(eHemiProj)
+    .pointRadius(2);
+const wPath = d3.geoPath()
+    .projection(wHemiProj)
+    .pointRadius(2);
 
-const div = d3.select('#eHemi')
-    .append('svg')
-    .attr('id', 'eHemiSVG')
-    .attr('width', width)
-    .attr('height', height);
+const drawHemi = (c, ex, hemi) => {
+    let rotate = [];
+    let divID = "#" + hemi + "Hemi";
+    if (hemi == "e") {
+        rotate = [-70, 0, 180];
+    } else if (hemi == "w") {
+        rotate = [110, 0, 180];
+    }
+    const proj = geoNicolosi()
+        .rotate(rotate)
+        .clipAngle(90)
+        .precision(.1)
+        .fitExtent([[0, 0], [width - padding, height - padding]], sphere)
+        .translate([width/2, height/2]);
+    const path = d3.geoPath()
+        .projection(proj)
+        .pointRadius(2);
+    const div = d3.select(divID)
+        .append('svg')
+        .attr('id', 'eHemiSVG')
+        .attr('width', width)
+        .attr('height', height);
+    const r = proj.rotate();
+    proj.reflectX(true).rotate([r[0] + 180, -r[1], -r[2]]);
+    // Sphere
+    div.append("path")
+        .attr("d", ePath(sphere))
+        .attr("stroke-width", 3)
+        .attr("stroke", color.highlight)
+        .attr("fill", color.baseBG);
+    // 'Dark Side' Countries
+    div.append("path")
+        .attr("d", ePath(c))
+        .attr("fill", color.highlightBG);
+    eHemiProj.reflectX(false).rotate(r);
+    // Countries
+    div.append("path")
+        .attr("d", ePath(c))
+        .attr("fill", color.highlight);
+    // Graticule
+    div.append("path")
+        .attr("d", ePath(graticule))
+        .attr("stroke-width", 0.25)
+        .attr("stroke", color.base)
+        .attr("fill", "none");
+    // Exhibitor locations
+    div.append("path")
+        .attr("d", ePath(ex))
+        .attr("fill", color.base)
+        .attr("stroke", "none");
+}
 
-const drawGlobe = () => {
-    let endpoints = ['http://127.0.0.1:3000/countries/', 'http://127.0.0.1:3000/exhibitors/'];
+const d3Draw = () => {
+    let endpoints = ['http://127.0.0.1:3000/countries/', 
+        'http://127.0.0.1:3000/exhibitors/'];
     let promises = [];
 
     endpoints.forEach(function(url) {
@@ -45,30 +96,9 @@ const drawGlobe = () => {
     Promise.all(promises).then(function(data){
         let countries = data[0];
         let exhibitors = data[1];
-        const r = eHemiProj.rotate();
-        eHemiProj.reflectX(true).rotate([r[0] + 180, -r[1], -r[2]]);
-        // Sphere
-        div.append("path")
-            .attr("d", ePath(sphere))
-            .attr("stroke-width", 3)
-            .attr("stroke", color.highlight)
-            .attr("fill", color.baseBG);
-        // 'Dark Side' Countries
-        div.append("path")
-            .attr("d", ePath(countries))
-            .attr("fill", color.highlightBG);
-        eHemiProj.reflectX(false).rotate(r);
-        // Countries
-        div.append("path")
-            .attr("d", ePath(countries))
-            .attr("fill", color.highlight);
-        // Graticule
-        div.append("path")
-            .attr("d", ePath(graticule))
-            .attr("stroke-width", 1)
-            .attr("stroke", color.highlight)
-            .attr("fill", "none");
+        drawHemi(countries, exhibitors, "e");
+        drawHemi(countries, exhibitors, "w");
     });
 }
 
-drawGlobe();
+d3Draw();
