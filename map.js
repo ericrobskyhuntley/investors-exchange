@@ -15,6 +15,9 @@ import Style from 'ol/style/Style';
 
 import * as color from "./colors.js";
 import * as world from "./hemis.js";
+import * as vid from "./video.js";
+
+vid.colorize();
 
 const rotate = 15.816 + 90;
 const center = [-79.384353, 43.641923];

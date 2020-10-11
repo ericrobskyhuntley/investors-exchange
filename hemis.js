@@ -10,7 +10,6 @@ const pad = 30;
 let box = document.querySelector('body');
 let w = box.offsetWidth / 4;
 let h = box.offsetHeight;
-console.log(w, h);
 const graticule = d3.geoGraticule10();
 const sphere = ({ type: "Sphere" });
 
@@ -224,11 +223,11 @@ const drawHemi = (c, ex, exc, hqC, hemi) => {
             .attr("stroke", "white")
             .attr("stroke-width", 0.5);
     // Sphere
-    svg.append("path")
-        .attr("d", path(sphere))
-        .attr("stroke-width", 2)
-        .attr("stroke", color.highlight)
-        .attr("fill", "none");
+    // svg.append("path")
+    //     .attr("d", path(sphere))
+    //     .attr("stroke-width", 2)
+    //     .attr("stroke", color.highlight)
+    //     .attr("fill", "none");
 }
 
 const d3Draw = () => {
