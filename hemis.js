@@ -3,6 +3,7 @@ import { geoNicolosi } from "d3-geo-projection";
 import { geoAirocean } from "d3-geo-polygon";
 const slug = require("slug");
 import * as color from "./colors.js";
+import { select } from "d3";
 
 const pad = 30;
 
@@ -12,6 +13,8 @@ let w = box.offsetWidth / 4;
 let h = box.offsetHeight;
 const graticule = d3.geoGraticule10();
 const sphere = ({ type: "Sphere" });
+
+const selectTime = 750;
 
 let mouseOver = function (d) {
     d3.selectAll(".country")
@@ -36,33 +39,33 @@ let boothSelect = function (boothNum, exName, countries) {
     let countriesAgg = countries.map(i => '#' + slug(String(i))).join(', ');
     d3.selectAll(".booth-hq")
         .transition()
-        .duration(50)
+        .duration(selectTime)
         .style("opacity", 0);
     d3.selectAll("#booth-hq-" + boothNum)
         .transition()
-        .duration(50)
+        .duration(selectTime)
         .attr("stroke-width", 1)
         .style("opacity", 1);
     d3.selectAll(".exhibitor")
         .transition()
-        .duration(50)
+        .duration(selectTime)
         .style("opacity", 0);
     d3.selectAll("#" + nameSlug)
         .transition()
-        .duration(50)
+        .duration(selectTime)
         .style("opacity", 1);
     d3.selectAll("#hq-c-" + boothNum)
         .transition()
-        .duration(50)
+        .duration(selectTime)
         .attr("stroke-width", 1)
         .style("opacity", 1);
     d3.selectAll(".country")
         .transition()
-        .duration(50)
+        .duration(selectTime)
         .style("opacity", 0.5);
     d3.selectAll(countriesAgg)
         .transition()
-        .duration(50)
+        .duration(selectTime)
         .style("opacity", 1);
 }
 

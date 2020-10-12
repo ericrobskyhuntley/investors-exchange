@@ -14,6 +14,10 @@ import Fill from 'ol/style/Fill';
 import Stroke from 'ol/style/Stroke';
 import Style from 'ol/style/Style';
 
+
+import Select from 'ol/interaction/Select';
+import {altKeyOnly, click, pointerMove} from 'ol/events/condition';
+
 import * as color from "./colors.js";
 import * as world from "./hemis.js";
 import * as vid from "./video.js";
@@ -23,30 +27,33 @@ vid.colorize();
 const rotate = 15.816 + 90;
 const center = [-79.384353, 43.641923];
 const cutWidth = 0.3;
-const cutHeight = 0.25;
+const cutHeight = 0.2;
 const initZoom = 19;
 
 
 const highlightStyle = new Style({
     fill: new Fill({
-        color: color.baseBG
+        color: color.highlight
     }),
     stroke: new Stroke({
-        color: color.base,
-        width: 1,
+        color: color.highlight,
+        width: 2,
     })
 });
 
 const boothStyle = new Style({
+    fill: new Fill({
+        color: color.highlightBG
+    }),
     stroke: new Stroke({
-        color: color.base,
-        width: 1,
+        color: color.highlight,
+        width: 1.5,
     })
 });
 
 const base = new TileLayer({
     source: new XYZ({
-        url: 'http://127.0.0.1:3000/tiles/{z}/{x}/{-y}.png',
+        url: 'http://127.0.0.1:3000/base/{z}/{x}/{-y}.png',
         layername: 'basemap'
     })
 });
@@ -54,7 +61,14 @@ const base = new TileLayer({
 
 const boothBase = new TileLayer({
     source: new XYZ({
-        url: 'http://127.0.0.1:3000/booths/{z}/{x}/{-y}.png',
+        url: 'http://127.0.0.1:3000/booths_gp_bg/{z}/{x}/{-y}.png',
+        layername: 'boothsBase'
+    })
+});
+
+const boothShadow = new TileLayer({
+    source: new XYZ({
+        url: 'http://127.0.0.1:3000/booths_pg_bg/{z}/{x}/{-y}.png',
         layername: 'boothsBase'
     })
 });
@@ -71,13 +85,16 @@ const booths = new VectorLayer({
 const map = new Map({
     target: 'map',
     layers: [
-        base, boothBase, booths
+        base, 
+        boothShadow, 
+        boothBase, 
+        booths
     ],
     view: new View({
         center: fromLonLat(center),
         zoom: initZoom - 1,
         rotation: rotate * (Math.PI / 180),
-        minZoom: 18,
+        minZoom: 19,
         maxZoom: 21,
     }),
     controls: [
@@ -94,10 +111,10 @@ map.setView(new View({
     extent: map.getView().calculateExtent(map.getSize())
 }))
 
-function clip(event) {
+function clip(event, offset) {
     let ctx = event.context;
-    let w = ctx.canvas.width * cutWidth;
-    let h = ctx.canvas.height * cutHeight;
+    let w = 600;
+    let h = 600;
     // calculate the pixel ratio and rotation of the canvas
     let matrix = event.inversePixelTransform;
     let canvasRotation = -Math.atan2(matrix[1], matrix[0]);
@@ -109,7 +126,7 @@ function clip(event) {
 
     ctx.translate(-w / 2, -h / 2);
     ctx.beginPath();
-    ctx.rect(0, 0, w, h)
+    ctx.rect(0+offset, 0-offset, w+offset, h-offset)
     ctx.clip();
     ctx.translate(w / 2, h / 2);
 
@@ -120,14 +137,24 @@ function clip(event) {
 }
 
 boothBase.on('prerender', function (e) {
-    clip(e);
+    clip(e, 0);
+});
+
+
+boothShadow.on('prerender', function (e) {
+    clip(e, 15);
 });
 
 booths.on('prerender', function (e) {
-    clip(e);
+    clip(e, 0);
 });
 
 boothBase.on('postrender', function (e) {
+    let ctx = e.context;
+    ctx.restore();
+});
+
+boothShadow.on('postrender', function (e) {
     let ctx = e.context;
     ctx.restore();
 });
@@ -143,6 +170,7 @@ let selected = null;
 map.on('pointermove', function (e) {
     if (hovered !== null) {
         hovered.setStyle(undefined);
+
         hovered = null;
         world.boothReset();
     }
@@ -152,9 +180,7 @@ map.on('pointermove', function (e) {
         // console.log(hovered.getProperties());
         f.setStyle(highlightStyle);
         let boothNum = hovered.getProperties().booth_no;
-        let exName = hovered.getProperties().exhibitor;
-        let countries = hovered.getProperties().countries;
-        world.boothSelect(boothNum, exName, countries);
+        world.exhibitSelect(boothNum, exName, countries);
         return true;
     }, {
         layerFilter: function (a) {
@@ -171,8 +197,10 @@ map.on('click', function (e) {
     map.forEachFeatureAtPixel(e.pixel, function (f) {
         selected = f;
         let boothNum = selected.getProperties().booth_no;
+        let exName = selected.getProperties().exhibitor;
+        let countries = selected.getProperties().countries;
+        world.boothSelect(boothNum, exName, countries);
         let url = 'http://127.0.0.1:3000/video/bw/';
-
         vid.changeSource(url + boothNum + '.mp4');
 
         return true;
