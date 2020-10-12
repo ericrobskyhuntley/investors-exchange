@@ -3,29 +3,24 @@
   <head>
     <meta charset="utf-8">
     <title>Investors' Exchange</title>
-    <link href="https://vjs.zencdn.net/7.8.4/video-js.css" rel="stylesheet" />
     <style>
         html, body, #map {
-            background: rgba(244,11,181,1);
-            margin: 0;
-            height: 100%;
-            width: 100%;
-            font-family: sans-serif;
+          background: rgba(244,11,181,1);
+          margin: 0;
+          height: 100%;
+          width: 100%;
+          font-family: sans-serif;
         }
-        #eHemi {
-          display: inline-block;
-          z-index:20;
-          position: absolute;
-          z-index: 5;
-          bottom: 0;
-          right: 0;
-        }
-        #wHemi {
-          display: inline-block;
-          position: fixed;
-          z-index: 20;
-          bottom: 0;
-          left: 0;
+        #vid-top {
+          margin: 0;
+          height: 100%;
+          overflow:hidden;
+          width: 100%;
+          position:absolute;
+          z-index: 100;
+          mix-blend-mode: color-dodge;
+          pointer-events: none;
+          opacity: 0.3;
         }
         #fuller {
           display: inline-block;
@@ -34,41 +29,59 @@
           bottom: 0;
           right: 0;
         }
-        #vid-div {
+        #vid-frame {
           position:absolute;
           top:0;
           margin: 120px 0 120px 60px;
         }
-        #ix-video {
-          mix-blend-mode: multiply;
+
+        .vid-overlay {
+          position:absolute;
+          top:0;
+          width: 100%;
+          height: 100%;
+        }
+
+        #high-overlay {
+          /* mix-blend-mode: darken; */
+          z-index: 70;
+        }
+        #base-overlay {
+          mix-blend-mode: overlay;
+          z-index: 90;
+        }
+
+        #booth-view {
+          mix-blend-mode: normal;
+          z-index: 80;
+        }
+      
+        .isolate {
+          isolation: isolate;
+        }
+
+        .globe-shadow {
+          mix-blend-mode: darken;
+          z-index: 70;
+        }
+
+        #globe-view {
+          mix-blend-mode: normal;
+          z-index: 80;
         }
     </style>
   </head>
   <body>
+    <div id="vid-top">
+      <video id="vid-motion" class="video-js"></video>
+    </div>
     <div id="map"></div>
-    <!-- <div id="eHemi"></div> -->
-    <!-- <div id="wHemi"></div> -->
     <div id="fuller"></div>
-    <div id="vid-div">
-      <video autoplay loop
-        id="ix-video"
-        class="video-js"
-        preload="auto"
-        width="440"
-        height="703"
-        data-setup="{}"
-      >
-        <source src="http://127.0.0.1:3000/video/bw/2103.mp4" type="video/mp4" />
-        <p class="vjs-no-js">
-          To view this video please enable JavaScript, and consider upgrading to a
-          web browser that
-          <a href="https://videojs.com/html5-video-support/" target="_blank"
-            >supports HTML5 video</a
-          >
-        </p>
-      </video>
+    <div id="vid-frame">
+      <div class="vid-overlay" id="base-overlay"></div>
+      <video id="booth-view" class="video-js"></video>
+      <div class="vid-overlay" id="high-overlay"></div>
     </div>
     <script src="./map.js"></script>
-    <script src="https://vjs.zencdn.net/7.8.4/video.js"></script>
   </body>
 </html>

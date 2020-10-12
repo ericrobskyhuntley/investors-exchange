@@ -18,6 +18,8 @@
     "ol": "^6.4.3",
     "parcel-bundler": "^1.12.4",
     "slug": "^3.3.5",
-    "slugify": "^1.4.5"
+    "slugify": "^1.4.5",
+    "video.js": "^7.8.4",
+    "videojs": "^1.0.0"
   }
 }

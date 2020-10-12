@@ -13,7 +13,7 @@ let h = box.offsetHeight;
 const graticule = d3.geoGraticule10();
 const sphere = ({ type: "Sphere" });
 
-let mouseOver = function(d) {
+let mouseOver = function (d) {
     d3.selectAll(".country")
         .transition()
         .duration(50)
@@ -24,14 +24,14 @@ let mouseOver = function(d) {
         .style("opacity", 1);
 }
 
-let mouseLeave = function(d) {
+let mouseLeave = function (d) {
     d3.selectAll(".country")
         .transition()
         .duration(50)
         .style("opacity", 1);
 }
 
-let boothSelect = function(boothNum, exName, countries) {
+let boothSelect = function (boothNum, exName, countries) {
     let nameSlug = slug(exName);
     let countriesAgg = countries.map(i => '#' + slug(String(i))).join(', ');
     d3.selectAll(".booth-hq")
@@ -47,11 +47,11 @@ let boothSelect = function(boothNum, exName, countries) {
         .transition()
         .duration(50)
         .style("opacity", 0);
-    d3.selectAll("#"+nameSlug)
+    d3.selectAll("#" + nameSlug)
         .transition()
         .duration(50)
         .style("opacity", 1);
-    d3.selectAll("#hq-c-"+boothNum)
+    d3.selectAll("#hq-c-" + boothNum)
         .transition()
         .duration(50)
         .attr("stroke-width", 1)
@@ -66,7 +66,7 @@ let boothSelect = function(boothNum, exName, countries) {
         .style("opacity", 1);
 }
 
-let boothReset = function() {
+let boothReset = function () {
     d3.selectAll(".booth-hq")
         .transition()
         .duration(50)
@@ -95,22 +95,22 @@ const drawHemi = (c, ex, exc, hqC, hemi) => {
         rotate = [-70, 0, 180];
     } else if (hemi == "w") {
         rotate = [110, 0, 180];
-    } else if (hemi =="b") {
+    } else if (hemi == "b") {
         divID = "#fuller"
         proj = geoAirocean()
-            .translate([w/2, h/2]);
+            .translate([w / 2, h / 2]);
         let angle = proj.angle();
-        proj.angle(angle+90);
-        proj.fitExtent([[pad, pad], [w - pad, h - pad]], sphere);  
+        proj.angle(angle + 90);
+        proj.fitExtent([[pad, pad], [w - pad, h - pad]], sphere);
     }
-    if (hemi=="e" | hemi=="w") {
+    if (hemi == "e" | hemi == "w") {
         divID = "#" + hemi + "Hemi";
         proj = geoNicolosi()
             .rotate(rotate)
             .clipAngle(90)
             .precision(.1)
-            .fitExtent([[0, 0], [w - pad, h - pad]], sphere)
-            .translate([w/2, h/2]);
+            .fitExtent([[pad, pad], [w - pad, h - pad]], sphere)
+            .translate([w / 2, h / 2]);
     }
     const path = d3.geoPath()
         .projection(proj)
@@ -119,17 +119,32 @@ const drawHemi = (c, ex, exc, hqC, hemi) => {
         .append('svg')
         .attr('width', w)
         .attr('height', h);
-    // Background
     svg.append("path")
+        .attr("id", function (d) {
+            return "globe-shadow"
+        })
+        .attr("class", function(d) {
+            return "globe-shadow"
+        })
         .attr("d", path(sphere))
         .attr("stroke", "none")
-        .attr("fill", color.baseBG);
-    if (hemi=="e" | hemi=="w") {
+        .attr("fill", color.highlight)
+        .attr("transform", "translate(15, -15)");
+    svg.append("path")
+        .attr("id", function (d) {
+            return "globe-view"
+        })
+        .attr("class", function(d) {
+            return "globe-back"
+        })
+        .attr("d", path(sphere))
+        .attr("fill", color.base);
+    if (hemi == "e" | hemi == "w") {
         r = proj.rotate();
         proj.reflectX(true).rotate([r[0] + 180, -r[1], -r[2]]);
     }
     // 'Dark Side' Countries
-    if (hemi=="e" | hemi=="w") {
+    if (hemi == "e" | hemi == "w") {
         svg.append("path")
             .attr("d", path(c))
             // .attr("class", function(d) { return + d.country})
@@ -143,18 +158,18 @@ const drawHemi = (c, ex, exc, hqC, hemi) => {
         .data(c.features)
         .enter()
         .append("path")
-            .attr("d", path)
-            .attr("id", function(d){
-                return slug(d.properties.country);
-            })
-            .attr("class", function(d){
-                return "country";
-            })
-            .attr("fill", color.highlight)
-            .attr("stroke", "none")
-            .attr("stroke-width", 0)
-            .on("mouseover", mouseOver)
-            .on("mouseleave", mouseLeave);
+        .attr("d", path)
+        .attr("id", function (d) {
+            return slug(d.properties.country);
+        })
+        .attr("class", function (d) {
+            return "country";
+        })
+        .attr("fill", color.highlight)
+        .attr("stroke", "none")
+        .attr("stroke-width", 0)
+        .on("mouseover", mouseOver)
+        .on("mouseleave", mouseLeave);
 
     // Graticule
     svg.append("path")
@@ -165,23 +180,23 @@ const drawHemi = (c, ex, exc, hqC, hemi) => {
 
     // Booth-to-HQ
     svg.append("g")
-        .attr("id", function(d){
+        .attr("id", function (d) {
             return "booth-to-hq"
         })
         .selectAll("path")
         .data(exc.features)
         .enter()
         .append("path")
-            .attr("d", path)
-            .attr("class", function(d){
-                return "booth-hq";
-            })
-            .attr("id", function(d){
-                return "booth-hq-" + d.properties.booth_no;
-            })
-            .attr("fill", "none")
-            .attr("stroke", color.base)
-            .attr("stroke-width", 0.1);
+        .attr("d", path)
+        .attr("class", function (d) {
+            return "booth-hq";
+        })
+        .attr("id", function (d) {
+            return "booth-hq-" + d.properties.booth_no;
+        })
+        .attr("fill", "none")
+        .attr("stroke", color.base)
+        .attr("stroke-width", 0.1);
 
     // HQ-to-Country
     svg.append("g")
@@ -190,43 +205,43 @@ const drawHemi = (c, ex, exc, hqC, hemi) => {
         .data(hqC.features)
         .enter()
         .append("path")
-            .attr("d", path)
-            .attr("id", function(d){
-                return "hq-c-" + d.properties.booth_no;
-            })
-            .attr("class", function(d){
-                return "hq-c";
-            })
-            // .attr("fill", color.highlight)
-            .attr("fill", "none")
-            .attr("stroke", color.base)
-            .attr("stroke-width", 0.2)
-            .style("opacity", 0);
-    
+        .attr("d", path)
+        .attr("id", function (d) {
+            return "hq-c-" + d.properties.booth_no;
+        })
+        .attr("class", function (d) {
+            return "hq-c";
+        })
+        // .attr("fill", color.highlight)
+        .attr("fill", "none")
+        .attr("stroke", color.base)
+        .attr("stroke-width", 0.2)
+        .style("opacity", 0);
+
     // Exhibitor locations
     svg.append("g")
-        .attr("id", function(d){
+        .attr("id", function (d) {
             return "exhibitors"
         })
         .selectAll("path")
         .data(ex.features)
         .enter()
         .append("path")
-            .attr("d", path)
-            .attr("class", function(d){
-                return "exhibitor";
-            })
-            .attr("id", function(d){
-                return slug(d.properties.name);
-            })
-            .attr("fill", color.base)
-            .attr("stroke", "white")
-            .attr("stroke-width", 0.5);
-    // Sphere
+        .attr("d", path)
+        .attr("class", function (d) {
+            return "exhibitor";
+        })
+        .attr("id", function (d) {
+            return slug(d.properties.name);
+        })
+        .attr("fill", color.base)
+        .attr("stroke", "white")
+        .attr("stroke-width", 0.5);
+    //Sphere
     // svg.append("path")
     //     .attr("d", path(sphere))
     //     .attr("stroke-width", 2)
-    //     .attr("stroke", color.highlight)
+    //     .attr("stroke", "white")
     //     .attr("fill", "none");
 }
 

@@ -1,5 +1,6 @@
 import 'ol/ol.css';
 import { Map, View } from 'ol';
+import { Attribution } from 'ol/control';
 import MapboxVector from 'ol/layer/MapboxVector';
 import GeoJSON from 'ol/format/GeoJSON';
 import { fromLonLat } from 'ol/proj';
@@ -28,18 +29,15 @@ const initZoom = 19;
 
 const highlightStyle = new Style({
     fill: new Fill({
-        color: color.highlightBG,
+        color: color.baseBG
     }),
     stroke: new Stroke({
-        color: color.highlight,
-        width: 2,
+        color: color.base,
+        width: 1,
     })
 });
 
 const boothStyle = new Style({
-    fill: new Fill({
-        color: color.baseBG,
-    }),
     stroke: new Stroke({
         color: color.base,
         width: 1,
@@ -54,8 +52,11 @@ const base = new TileLayer({
 });
 
 
-const osm = new TileLayer({
-    source: new OSM()
+const boothBase = new TileLayer({
+    source: new XYZ({
+        url: 'http://127.0.0.1:3000/booths/{z}/{x}/{-y}.png',
+        layername: 'boothsBase'
+    })
 });
 
 const booths = new VectorLayer({
@@ -70,7 +71,7 @@ const booths = new VectorLayer({
 const map = new Map({
     target: 'map',
     layers: [
-        base, osm, booths
+        base, boothBase, booths
     ],
     view: new View({
         center: fromLonLat(center),
@@ -78,7 +79,10 @@ const map = new Map({
         rotation: rotate * (Math.PI / 180),
         minZoom: 18,
         maxZoom: 21,
-    })
+    }),
+    controls: [
+        new Attribution()
+    ]
 });
 
 map.setView(new View({
@@ -115,7 +119,7 @@ function clip(event) {
     return ctx
 }
 
-osm.on('prerender', function (e) {
+boothBase.on('prerender', function (e) {
     clip(e);
 });
 
@@ -123,7 +127,7 @@ booths.on('prerender', function (e) {
     clip(e);
 });
 
-osm.on('postrender', function (e) {
+boothBase.on('postrender', function (e) {
     let ctx = e.context;
     ctx.restore();
 });
@@ -135,8 +139,6 @@ booths.on('postrender', function (e) {
 
 let hovered = null;
 let selected = null;
-let video = document.getElementsByTagName("video")[0];
-let videoSource = document.getElementsByTagName("source");
 
 map.on('pointermove', function (e) {
     if (hovered !== null) {
@@ -147,7 +149,7 @@ map.on('pointermove', function (e) {
 
     map.forEachFeatureAtPixel(e.pixel, function (f) {
         hovered = f;
-        console.log(hovered.getProperties());
+        // console.log(hovered.getProperties());
         f.setStyle(highlightStyle);
         let boothNum = hovered.getProperties().booth_no;
         let exName = hovered.getProperties().exhibitor;
@@ -170,9 +172,9 @@ map.on('click', function (e) {
         selected = f;
         let boothNum = selected.getProperties().booth_no;
         let url = 'http://127.0.0.1:3000/video/bw/';
-        videoSource[0].src = url + boothNum + '.mp4';;
-        video.load();
-        video.play();
+
+        vid.changeSource(url + boothNum + '.mp4');
+
         return true;
     }, {
         layerFilter: function (a) {
