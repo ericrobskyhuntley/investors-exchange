@@ -1,11 +1,11 @@
 import 'ol/ol.css';
-import { Map, View } from 'ol';
+import { Map, Overlay, View } from 'ol';
+import { transformExtent } from 'ol/proj';
 import { Attribution } from 'ol/control';
-import MapboxVector from 'ol/layer/MapboxVector';
 import GeoJSON from 'ol/format/GeoJSON';
-import { fromLonLat } from 'ol/proj';
+import { fromLonLat, toLonLat } from 'ol/proj';
+import { toStringHDMS } from 'ol/coordinate';
 import TileLayer from 'ol/layer/Tile';
-import OSM from 'ol/source/OSM';
 import XYZ from 'ol/source/XYZ';
 import VectorSource from 'ol/source/Vector';
 import VectorLayer from 'ol/layer/Vector';
@@ -14,44 +14,55 @@ import Fill from 'ol/style/Fill';
 import Stroke from 'ol/style/Stroke';
 import Style from 'ol/style/Style';
 
-
-import Select from 'ol/interaction/Select';
-import {altKeyOnly, click, pointerMove} from 'ol/events/condition';
-
-import * as color from "./colors.js";
-import * as world from "./hemis.js";
+import { highlight, highlightBG, base, baseBG, mapRotation, shadowOffset } from "./constants.js";
+import * as world from "./world.js";
 import * as vid from "./video.js";
 
 vid.colorize();
 
-const rotate = 15.816 + 90;
-const center = [-79.384353, 43.641923];
-const cutWidth = 0.3;
-const cutHeight = 0.2;
-const initZoom = 19;
+const shadowBoxes = document.getElementsByClassName('shadow');
+for (var i = 0; i < shadowBoxes.length; i++) {
+    let shadowStyle = "box-shadow: " + shadowOffset + "px -" + shadowOffset + "px 0px " + highlight;
+    shadowBoxes[i].style = shadowStyle;
+}
 
+const center = [-79.384353, 43.641923];
+const mapExtent = [-79.3866460768208526, 43.6400473344762645, -79.3822610655956566, 43.6442472623937832];
+const initZoom = 19;
+const width = 450;
+const height = 700;
+
+const selectedStyle = new Style({
+    fill: new Fill({
+        color: base
+    }),
+    stroke: new Stroke({
+        color: base,
+        width: 2,
+    })
+});
 
 const highlightStyle = new Style({
     fill: new Fill({
-        color: color.highlight
+        color: highlight
     }),
     stroke: new Stroke({
-        color: color.highlight,
+        color: base,
         width: 2,
     })
 });
 
 const boothStyle = new Style({
     fill: new Fill({
-        color: color.highlightBG
+        color: highlightBG
     }),
     stroke: new Stroke({
-        color: color.highlight,
+        color: highlight,
         width: 1.5,
     })
 });
 
-const base = new TileLayer({
+const cityscape = new TileLayer({
     source: new XYZ({
         url: 'http://127.0.0.1:3000/base/{z}/{x}/{-y}.png',
         layername: 'basemap'
@@ -85,16 +96,16 @@ const booths = new VectorLayer({
 const map = new Map({
     target: 'map',
     layers: [
-        base, 
-        boothShadow, 
-        boothBase, 
+        cityscape,
+        boothShadow,
+        boothBase,
         booths
     ],
     view: new View({
         center: fromLonLat(center),
-        zoom: initZoom - 1,
-        rotation: rotate * (Math.PI / 180),
-        minZoom: 19,
+        zoom: initZoom,
+        rotation: mapRotation * (Math.PI / 180),
+        minZoom: 18,
         maxZoom: 21,
     }),
     controls: [
@@ -104,17 +115,17 @@ const map = new Map({
 
 map.setView(new View({
     center: map.getView().getCenter(),
-    zoom: map.getView().getZoom() + 1,
+    zoom: map.getView().getZoom(),
     rotation: map.getView().getRotation(),
     minZoom: map.getView().getMinZoom(),
     maxZoom: map.getView().getMaxZoom(),
-    extent: map.getView().calculateExtent(map.getSize())
-}))
+    extent: transformExtent(mapExtent, 'EPSG:4326', 'EPSG:3857')
+}));
 
 function clip(event, offset) {
     let ctx = event.context;
-    let w = 600;
-    let h = 600;
+    let w = width;
+    let h = height;
     // calculate the pixel ratio and rotation of the canvas
     let matrix = event.inversePixelTransform;
     let canvasRotation = -Math.atan2(matrix[1], matrix[0]);
@@ -126,13 +137,16 @@ function clip(event, offset) {
 
     ctx.translate(-w / 2, -h / 2);
     ctx.beginPath();
-    ctx.rect(0+offset, 0-offset, w+offset, h-offset)
+    ctx.rect(0 + offset, 0 - offset, w + offset, h - offset)
     ctx.clip();
     ctx.translate(w / 2, h / 2);
 
     // reapply canvas rotation and position
     ctx.rotate(canvasRotation);
     ctx.translate(-ctx.canvas.width / 2, -ctx.canvas.height / 2);
+    ctx.strokeStyle = highlight;
+    ctx.lineWidth = 2;
+    ctx.stroke();
     return ctx
 }
 
@@ -142,7 +156,7 @@ boothBase.on('prerender', function (e) {
 
 
 boothShadow.on('prerender', function (e) {
-    clip(e, 15);
+    clip(e, shadowOffset);
 });
 
 booths.on('prerender', function (e) {
@@ -167,20 +181,31 @@ booths.on('postrender', function (e) {
 let hovered = null;
 let selected = null;
 
+let popup = document.getElementById('popup')
+let info = document.getElementById('info-box')
+
 map.on('pointermove', function (e) {
     if (hovered !== null) {
         hovered.setStyle(undefined);
-
         hovered = null;
-        world.boothReset();
     }
 
     map.forEachFeatureAtPixel(e.pixel, function (f) {
+        popup.style.visibility = "visible";
         hovered = f;
-        // console.log(hovered.getProperties());
-        f.setStyle(highlightStyle);
-        let boothNum = hovered.getProperties().booth_no;
-        world.exhibitSelect(boothNum, exName, countries);
+        if (hovered) {
+            hovered.setStyle(highlightStyle);
+            let boothNum = hovered.getProperties().booth_no;
+            let exName = hovered.getProperties().exhibitor;
+            world.boothHover(boothNum, exName);
+            let left = e.originalEvent.x;
+            let top = e.originalEvent.y - shadowOffset;
+            popup.style.left = left + 'px';
+            popup.style.top = top + 'px';
+            popup.style.backgroundColor = base;
+            let content = '<code>Booth #' + boothNum + '</code><hr style="border: 0.1px solid ' + highlight + '"><h3>' + exName + "</h3>";
+            popup.innerHTML = content;
+        }
         return true;
     }, {
         layerFilter: function (a) {
@@ -196,13 +221,37 @@ map.on('click', function (e) {
     }
     map.forEachFeatureAtPixel(e.pixel, function (f) {
         selected = f;
-        let boothNum = selected.getProperties().booth_no;
-        let exName = selected.getProperties().exhibitor;
-        let countries = selected.getProperties().countries;
-        world.boothSelect(boothNum, exName, countries);
-        let url = 'http://127.0.0.1:3000/video/bw/';
-        vid.changeSource(url + boothNum + '.mp4');
+        console.log(selected.getProperties());
+        if (selected) {
+            selected.setStyle(selectedStyle);
+            let p = selected.getProperties();
+            let boothNum = p.booth_no;
+            let exName = p.exhibitor;
+            let countries = p.countries;
+            let add = p.add;
+            let web = p.website;
 
+            // Trigger world map change on click.
+            world.boothSelect(boothNum, exName, countries);
+
+            // Show info box on click.
+            info.style.visibility = "visible";
+            info.style.backgroundColor = base;
+            let content = "<code>Booth #" + boothNum + "</code>" 
+                + "<h3>" + exName + "</h3><ul class='no-bullets'>" 
+                + "<li>" + add + "</li>" 
+                + "<li>Exploring sites in <code><u>" + String(countries).replace(/,/g, '</u></code>, <code><u>') + "</u></code></li>" 
+                + "<li><code><a href='" + web + "'>" + web + "</a></code></li></ul>"
+            // let content = '<code>Booth #' + boothNum + '</code><hr style="border: 0.1px solid ' + highlight + '">' + exName;
+            info.innerHTML = content;
+
+            // Change video source on click.
+            let url = 'http://127.0.0.1:3000/video/bw/';
+            vid.changeSource(url + boothNum + '.mp4');
+
+            // Remove popup on click.
+            popup.style.visibility = "hidden";
+        }
         return true;
     }, {
         layerFilter: function (a) {
@@ -211,3 +260,11 @@ map.on('click', function (e) {
     })
 
 })
+
+map.getViewport().addEventListener('mouseout', function (e) {
+    popup.style.visibility = "hidden";
+}, {
+    layerFilter: function (a) {
+        return (a == booths)
+    }
+});

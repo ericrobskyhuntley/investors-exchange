@@ -3,13 +3,15 @@
   <head>
     <meta charset="utf-8">
     <title>Investors' Exchange</title>
-    <style>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital@1&family=Roboto:wght@700&display=swap" rel="stylesheet"> <style>
         html, body, #map {
           background: rgba(244,11,181,1);
           margin: 0;
           height: 100%;
           width: 100%;
-          font-family: sans-serif;
+          font-family: Roboto, sans-serif;
+          /* color: white; */
+          color: rgba(220,247,52,1.0);
         }
         #vid-top {
           margin: 0;
@@ -20,7 +22,7 @@
           z-index: 100;
           mix-blend-mode: color-dodge;
           pointer-events: none;
-          opacity: 0.3;
+          opacity: 0.2;
         }
         #fuller {
           display: inline-block;
@@ -33,6 +35,19 @@
           position:absolute;
           top:0;
           margin: 120px 0 120px 60px;
+          border: 1px solid rgba(220,247,52,1.0);
+        }
+
+        #info-box {
+          position:absolute;
+          top:15;
+          width: 100%;
+          /* height: 25%; */
+          z-index: 250;
+          margin: -75px 30px;
+          padding: 30px;
+          visibility: hidden;
+          border: 1px solid rgba(220,247,52,1.0);
         }
 
         .vid-overlay {
@@ -42,22 +57,10 @@
           height: 100%;
         }
 
-        #high-overlay {
-          /* mix-blend-mode: darken; */
-          z-index: 70;
-        }
         #base-overlay {
           mix-blend-mode: overlay;
           z-index: 90;
-        }
-
-        #booth-view {
-          mix-blend-mode: normal;
-          z-index: 80;
-        }
-      
-        .isolate {
-          isolation: isolate;
+          pointer-events: none;
         }
 
         .globe-shadow {
@@ -69,18 +72,47 @@
           mix-blend-mode: normal;
           z-index: 80;
         }
+
+        #popup {
+          pointer-events: none;
+          z-index: 1000;
+          position: absolute;
+          padding: 8px;
+          border: 1px solid rgba(220,247,52,1.0);
+        }
+
+        ul.no-bullets {
+          list-style-type: none;
+          padding: 0;
+          margin: 0;
+          font-family: 'Crimson Text', serif;
+          font-size: 1.25rem;
+        }
+
+        li {
+          padding-bottom: 5px;
+        }
+
+        a {
+          color: rgba(220,247,52,1.0);
+        }
+
+        code {
+          font-size: 1rem;
+        }
     </style>
   </head>
   <body>
     <div id="vid-top">
       <video id="vid-motion" class="video-js"></video>
     </div>
-    <div id="map"></div>
+    <div id="map"></div> 
+    <div id="popup" class="shadow"></div>
     <div id="fuller"></div>
     <div id="vid-frame">
-      <div class="vid-overlay" id="base-overlay"></div>
-      <video id="booth-view" class="video-js"></video>
-      <div class="vid-overlay" id="high-overlay"></div>
+      <div id="info-box" class="shadow"></div>
+      <div id="base-overlay" class="vid-overlay"></div>
+      <video id="booth-view" class="video-js shadow"></video>
     </div>
     <script src="./map.js"></script>
   </body>

@@ -1,4 +1,4 @@
-import * as color from "./colors.js";
+import { highlight, highlightBG, base, baseBG } from "./constants.js";
 import videojs from "video.js";
 import 'video.js/dist/video-js.css';
 
@@ -8,8 +8,9 @@ let wBooth = b.offsetWidth / 4;
 const playbackRate = 0.4;
 
 const colorize = () => {
-    document.getElementById("high-overlay").setAttribute("style", "top:-15px;right:-15px;background-color:" + color.highlight);
-    document.getElementById("base-overlay").setAttribute("style", "background-color:" + color.base);
+    document
+        .getElementById("base-overlay")
+        .setAttribute("style", "background-color:" + base);
 }
 const player = videojs('booth-view', {
     controls: false,
@@ -35,7 +36,11 @@ player.ready(function(){
         src: "http://127.0.0.1:3000/video/bw/2103.mp4"
     });
     this.width(wBooth);
-
+    this.on('mousemove', function(e){
+        this.pause();
+        let prop = (1 - (e.offsetX / wBooth));
+        this.currentTime(this.duration() * prop);
+    });
 });
 
 overlayPlayer.ready(function(){
